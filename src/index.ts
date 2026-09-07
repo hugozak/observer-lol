@@ -8,7 +8,7 @@ import { diff } from './events.js';
 import { startServer } from './server.js';
 
 const PORT = Number(process.env.PORT ?? 9001);
-const PUBLIC_DIR = join(process.cwd(), 'public');
+const PUBLIC_DIR = join(process.cwd(), process.env.PUBLIC_DIR ?? 'public');
 const RECORD = process.env.RECORD === '1';
 const RECORD_FILE = join(process.cwd(), 'recordings', `draft-${Date.now()}.ndjson`);
 

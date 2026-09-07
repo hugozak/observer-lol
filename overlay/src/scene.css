@@ -1,0 +1,124 @@
+:root {
+  --ink-900: #14181d;
+  --ink-700: #1e242b;
+  --ink-500: #2c343d;
+  --bone: #e8e4da;
+  --bone-dim: #8e9198;
+  --bone-mute: #5c646e;
+  --blue: #4fa8d8;
+  --red: #e0574b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  /* OBS gere l'alpha nativement, pas besoin de fond. */
+  background: transparent;
+  font-family: 'Archivo', system-ui, sans-serif;
+  color: var(--bone);
+  overflow: hidden;
+}
+
+/* Canvas fixe. Aucun responsive : la Browser Source fait 1920x1080.
+   Pour previsualiser en petit, ajoute ?scale=0.5 dans l'URL. */
+.scene {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: top left;
+  background: var(--ink-900);
+}
+.scene--idle { background: transparent; }
+
+/* ---------- colonnes ---------- */
+
+.column { position: absolute; top: 64px; width: 470px; }
+.column--blue { left: 80px; }
+.column--red  { right: 80px; text-align: right; }
+
+.column__name {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 500;
+  font-size: 34px;
+  padding-bottom: 22px;
+}
+.column--blue .column__name { border-bottom: 2px solid var(--ink-500); }
+.column--red  .column__name { border-bottom: 2px solid var(--ink-500); }
+
+.column__slots { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
+.column__bans  { display: flex; gap: 10px; margin-top: 42px; }
+.column--red .column__bans { justify-content: flex-end; }
+
+/* ---------- slots ---------- */
+
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 124px;
+  padding: 0 22px;
+  /* Pas de border-radius : les bords droits vont avec la barre laterale.
+     Un coin arrondi sur une bordure d'un seul cote ne fonctionne pas. */
+}
+.slot--red { flex-direction: row-reverse; }
+
+.slot__edge { position: absolute; top: 0; width: 5px; height: 0; transition: height 260ms ease-out; }
+.slot--blue .slot__edge { left: 0; }
+.slot--red  .slot__edge { right: 0; }
+
+.slot--empty    { border: 1px solid var(--ink-500); }
+.slot--hovering { border: 1px solid currentColor; }
+.slot--locked   { background: var(--ink-700); }
+
+.slot--hovering.slot--blue, .slot--locked.slot--blue { color: var(--blue); }
+.slot--hovering.slot--red,  .slot--locked.slot--red  { color: var(--red); }
+
+.slot--hovering .slot__edge { height: 62px; top: 31px; background: currentColor; }
+.slot--locked   .slot__edge { height: 124px; background: currentColor; }
+
+.slot__icon { width: 84px; height: 84px; flex: none; border-radius: 2px; }
+.slot__icon--empty { background: #1a1f25; }
+.slot--hovering .slot__icon { opacity: 0.5; }
+
+.slot__text { display: flex; flex-direction: column; }
+.slot__champ {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 500;
+  font-size: 31px;
+  color: var(--bone);
+}
+.slot--hovering .slot__champ { opacity: 0.62; }
+.slot__player { font-size: 19px; color: var(--bone-dim); margin-top: 5px; }
+.slot__role   { font-size: 21px; color: var(--bone-mute); }
+
+/* ---------- bans ---------- */
+
+.ban { position: relative; width: 62px; height: 62px; overflow: hidden; }
+.ban img { width: 100%; height: 100%; filter: grayscale(1) brightness(0.65); border-radius: 2px; }
+.ban__slash {
+  position: absolute; left: -10px; top: 30px;
+  width: 82px; height: 2px; background: var(--ink-900);
+  transform: rotate(-45deg);
+}
+.ban--empty { border: 1px solid var(--ink-500); border-radius: 2px; }
+
+/* ---------- centre ---------- */
+
+.center { position: absolute; left: 760px; top: 120px; width: 400px; text-align: center; }
+.center__clock {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 500;
+  font-size: 96px;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+.center__track { width: 300px; height: 3px; background: var(--ink-500); margin: 14px auto 0; }
+.center__fill  { height: 3px; background: var(--bone-dim); transition: width 120ms linear; }
+.center__fill[data-team='blue'] { background: var(--blue); }
+.center__fill[data-team='red']  { background: var(--red); }
+.center__caption { font-size: 21px; color: var(--bone-dim); margin-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

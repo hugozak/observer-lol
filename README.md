@@ -29,3 +29,14 @@ difference, et tu developpes sans lancer de partie.
     PORT=9001
     LEAGUE_LOCKFILE=D:\Riot Games\League of Legends\lockfile
     RECORD=1
+
+## Overlay (Vite + React)
+
+    cd overlay && npm install && npm run dev
+
+- `http://localhost:5173/?dev&scale=0.5` — panneau d'etats + apercu reduit
+- `http://localhost:5173/?dev&offline` — sans collecteur, etats a la main
+- `npm run build` compile dans `../public`, servi par le collecteur sur :9001
+
+La page de debug d'origine reste disponible : `PUBLIC_DIR=debug npm run dev`
+depuis la racine.

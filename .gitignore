@@ -3,3 +3,6 @@ recordings/
 dist/
 .env
 *.log
+public/assets/
+public/index.html
+overlay/node_modules/

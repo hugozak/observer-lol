@@ -21,7 +21,7 @@ const PORT = Number(process.env.PORT ?? 9001);
 type Frame = { t: number; data: RawSession | null };
 
 let state: DraftState = EMPTY_STATE;
-const server = startServer(PORT, join(process.cwd(), 'public'), () => state);
+const server = startServer(PORT, join(process.cwd(), process.env.PUBLIC_DIR ?? 'public'), () => state);
 
 function apply(raw: RawSession | null) {
   const next = normalize(raw);
