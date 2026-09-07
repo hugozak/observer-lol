@@ -17,9 +17,9 @@ function App() {
   const onEvent = useCallback((event: DraftEvent) => {
     if (event.type === 'pick.locked') {
       document
-        .querySelector(`.column--${event.team} .slot:nth-child(${event.slotIndex + 1})`)
+        .querySelector(`.side--${event.team} .panel:nth-child(${event.slotIndex + 1})`)
         ?.animate(
-          [{ transform: 'translateX(0)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }],
+          [{ transform: 'scale(1.04)' }, { transform: 'scale(1)' }],
           { duration: 320, easing: 'cubic-bezier(.2,.7,.3,1)' },
         );
     }

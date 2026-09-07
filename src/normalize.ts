@@ -42,6 +42,7 @@ export type PickSlot = {
   championName: string | null;
   iconUrl: string | null;
   splashUrl: string | null;
+  artUrl: string | null;
   /** true quand le joueur survole sans avoir valide */
   hovering: boolean;
   /** true quand l'action est verrouillee */
@@ -106,6 +107,7 @@ function decorate(championId: number) {
     championName: champ?.name ?? null,
     iconUrl: champ?.iconUrl ?? null,
     splashUrl: champ?.splashUrl ?? null,
+    artUrl: champ?.artUrl ?? null,
   };
 }
 

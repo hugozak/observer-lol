@@ -2,14 +2,16 @@ import type { DraftState, PickSlot, Team } from './types';
 import { EMPTY_STATE } from './types';
 
 const CDRAGON = 'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
+const ART = 'https://ddragon.leagueoflegends.com/cdn/img/champion/loading';
 
-function pick(cellId: number, position: string, id: number, name: string, locked: boolean): PickSlot {
+function pick(cellId: number, position: string, id: number, name: string, locked: boolean, alias = name): PickSlot {
   return {
     cellId, position,
     championId: id,
     championName: name,
     iconUrl: `${CDRAGON}/${id}.png`,
     splashUrl: null,
+    artUrl: `${ART}/${alias}_0.jpg`,
     hovering: !locked,
     locked,
   };
@@ -18,7 +20,7 @@ function pick(cellId: number, position: string, id: number, name: string, locked
 function empty(cellId: number, position: string): PickSlot {
   return {
     cellId, position,
-    championId: 0, championName: null, iconUrl: null, splashUrl: null,
+    championId: 0, championName: null, iconUrl: null, splashUrl: null, artUrl: null,
     hovering: false, locked: false,
   };
 }
@@ -61,8 +63,8 @@ export const STATES: Record<string, () => DraftState> = {
     s.teams.blue.picks[0] = pick(0, 'top', 516, 'Ornn', true);
     s.teams.blue.picks[1] = pick(1, 'jungle', 113, 'Sejuani', true);
     s.teams.blue.picks[2] = pick(2, 'mid', 61, 'Orianna', true);
-    s.teams.red.picks[0] = pick(5, 'top', 897, "K'Sante", true);
-    s.teams.red.picks[3] = pick(8, 'bot', 145, "Kai'Sa", false);
+    s.teams.red.picks[0] = pick(5, 'top', 897, "K'Sante", true, 'KSante');
+    s.teams.red.picks[3] = pick(8, 'bot', 145, "Kai'Sa", false, 'Kaisa');
     s.teams.red.picks[4] = pick(9, 'support', 497, 'Rakan', true);
     s.teams.blue.bans = [ban(0, 266, 'Aatrox'), ban(1, 103, 'Ahri'), ban(2, 84, 'Akali')];
     s.teams.red.bans = [ban(0, 12, 'Alistar'), ban(1, 32, 'Amumu'), ban(2, 34, 'Anivia')];
@@ -80,7 +82,7 @@ export const STATES: Record<string, () => DraftState> = {
     const s = STATES['mi-draft']();
     (['blue', 'red'] as Team[]).forEach((t) =>
       s.teams[t].picks.forEach((p, i) => {
-        if (!p.championId) s.teams[t].picks[i] = pick(p.cellId, p.position, 64 + i, 'Lee Sin', true);
+        if (!p.championId) s.teams[t].picks[i] = pick(p.cellId, p.position, 64, 'Lee Sin', true, 'LeeSin');
         p.locked = true;
         p.hovering = false;
       }),

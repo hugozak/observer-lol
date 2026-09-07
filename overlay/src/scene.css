@@ -1,123 +1,135 @@
 :root {
-  --ink-900: #14181d;
-  --ink-700: #1e242b;
-  --ink-500: #2c343d;
-  --bone: #e8e4da;
-  --bone-dim: #8e9198;
-  --bone-mute: #5c646e;
-  --blue: #4fa8d8;
-  --red: #e0574b;
+  --ink: #0a0d11;
+  --ink-2: #0e141b;
+  --ink-3: #111820;
+  --line: #1a222c;
+  --bone: #f2efe7;
+  --bone-dim: #69737f;
+  --slate: #39424d;
+  --blue: #2e9be6;
+  --blue-bg: #0e1620;
+  --red: #ff4d3d;
+  --red-bg: #200e0c;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  /* OBS gere l'alpha nativement, pas besoin de fond. */
   background: transparent;
   font-family: 'Archivo', system-ui, sans-serif;
   color: var(--bone);
   overflow: hidden;
 }
-
-/* Canvas fixe. Aucun responsive : la Browser Source fait 1920x1080.
-   Pour previsualiser en petit, ajoute ?scale=0.5 dans l'URL. */
-.scene {
-  position: relative;
-  width: 1920px;
-  height: 1080px;
-  transform-origin: top left;
-  background: var(--ink-900);
+.x, .head__name, .head__pts, .panel__champ, .center__clock, .center__actor {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 600;
 }
+
+/* Canvas fixe : la Browser Source fait 1920x1080. ?scale=0.5 pour previsualiser. */
+.scene { width: 1920px; height: 1080px; background: var(--ink); display: flex; flex-direction: column; }
 .scene--idle { background: transparent; }
 
-/* ---------- colonnes ---------- */
+/* ---------- bandeau ---------- */
 
-.column { position: absolute; top: 64px; width: 470px; }
-.column--blue { left: 80px; }
-.column--red  { right: 80px; text-align: right; }
+.head { height: 96px; display: flex; }
+.head__team { flex: 1; display: flex; align-items: center; padding: 0 34px; position: relative; }
+.head__team--blue { border-top: 8px solid var(--blue); background: var(--blue-bg); }
+.head__team--red  { border-top: 8px solid var(--red);  background: var(--red-bg); justify-content: flex-end; }
+.head__name { font-size: 42px; }
 
-.column__name {
-  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
-  font-weight: 500;
-  font-size: 34px;
-  padding-bottom: 22px;
+/* Le score est pose au centre, au-dessus de la couture des deux fonds. */
+.head__score {
+  position: absolute; left: 100%; top: 0; width: 300px; height: 88px;
+  transform: translateX(-150px);
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  background: var(--ink); border-top: 8px solid var(--line); margin-top: -8px;
 }
-.column--blue .column__name { border-bottom: 2px solid var(--ink-500); }
-.column--red  .column__name { border-bottom: 2px solid var(--ink-500); }
+.head__pts { font-size: 44px; }
+.head__pts--blue { color: var(--blue); }
+.head__pts--red  { color: #5a6570; }
+.head__dash { font-size: 30px; color: #4a535e; }
 
-.column__slots { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
-.column__bans  { display: flex; gap: 10px; margin-top: 42px; }
-.column--red .column__bans { justify-content: flex-end; }
+/* ---------- panneaux ---------- */
 
-/* ---------- slots ---------- */
+.stage { flex: 1; display: flex; }
+.side { display: flex; flex: 1; }
 
-.slot {
+.panel {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  height: 124px;
-  padding: 0 22px;
-  /* Pas de border-radius : les bords droits vont avec la barre laterale.
-     Un coin arrondi sur une bordure d'un seul cote ne fonctionne pas. */
+  flex: 1 1 0;
+  overflow: hidden;
+  background: var(--ink-3);
+  /* La largeur du panneau actif est la seule animation de la scene. */
+  transition: flex-grow 380ms cubic-bezier(.2, .7, .3, 1);
 }
-.slot--red { flex-direction: row-reverse; }
+.panel[data-active] { flex-grow: 1.7; }
 
-.slot__edge { position: absolute; top: 0; width: 5px; height: 0; transition: height 260ms ease-out; }
-.slot--blue .slot__edge { left: 0; }
-.slot--red  .slot__edge { right: 0; }
+.panel__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.panel--hovering .panel__art { opacity: .55; }
 
-.slot--empty    { border: 1px solid var(--ink-500); }
-.slot--hovering { border: 1px solid currentColor; }
-.slot--locked   { background: var(--ink-700); }
+/* Voile plat plutot qu'un degrade : moins couteux a composer dans le CEF
+   d'OBS, et le bord franc est un parti pris graphique. */
+.panel__scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: rgba(8, 10, 14, .86); }
+.panel[data-active] .panel__scrim { height: 300px; }
 
-.slot--hovering.slot--blue, .slot--locked.slot--blue { color: var(--blue); }
-.slot--hovering.slot--red,  .slot--locked.slot--red  { color: var(--red); }
+.panel__text { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 30px; }
+.panel__player { font-size: 22px; margin-bottom: 10px; }
+.panel--blue .panel__player { color: var(--blue); }
+.panel--red  .panel__player { color: var(--red); }
+.panel__champ { font-size: 38px; line-height: 1.05; letter-spacing: -.5px; }
+.panel[data-active] .panel__champ { font-size: 44px; }
+.panel__hint { font-size: 20px; color: #8a939e; margin-top: 12px; }
 
-.slot--hovering .slot__edge { height: 62px; top: 31px; background: currentColor; }
-.slot--locked   .slot__edge { height: 124px; background: currentColor; }
-
-.slot__icon { width: 84px; height: 84px; flex: none; border-radius: 2px; }
-.slot__icon--empty { background: #1a1f25; }
-.slot--hovering .slot__icon { opacity: 0.5; }
-
-.slot__text { display: flex; flex-direction: column; }
-.slot__champ {
-  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
-  font-weight: 500;
-  font-size: 31px;
-  color: var(--bone);
+.panel[data-active].panel--blue { border-left: 4px solid var(--blue); border-right: 4px solid var(--blue); }
+.panel[data-active].panel--red  { border-left: 4px solid var(--red);  border-right: 4px solid var(--red); }
+.panel[data-active]:before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; z-index: 1;
+  background: var(--red);
 }
-.slot--hovering .slot__champ { opacity: 0.62; }
-.slot__player { font-size: 19px; color: var(--bone-dim); margin-top: 5px; }
-.slot__role   { font-size: 21px; color: var(--bone-mute); }
+.panel[data-active].panel--blue:before { background: var(--blue); }
 
-/* ---------- bans ---------- */
-
-.ban { position: relative; width: 62px; height: 62px; overflow: hidden; }
-.ban img { width: 100%; height: 100%; filter: grayscale(1) brightness(0.65); border-radius: 2px; }
-.ban__slash {
-  position: absolute; left: -10px; top: 30px;
-  width: 82px; height: 2px; background: var(--ink-900);
-  transform: rotate(-45deg);
+/* Le role a la verticale remplit la colonne vide et garde le rythme. */
+.panel__role {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  font-size: 26px; color: var(--slate); white-space: nowrap;
 }
-.ban--empty { border: 1px solid var(--ink-500); border-radius: 2px; }
 
 /* ---------- centre ---------- */
 
-.center { position: absolute; left: 760px; top: 120px; width: 400px; text-align: center; }
-.center__clock {
-  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
-  font-weight: 500;
-  font-size: 96px;
-  letter-spacing: -2px;
-  font-variant-numeric: tabular-nums;
+.center {
+  width: 300px; flex: none; background: #0c1117;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.center__track { width: 300px; height: 3px; background: var(--ink-500); margin: 14px auto 0; }
-.center__fill  { height: 3px; background: var(--bone-dim); transition: width 120ms linear; }
+.center__clock { font-size: 130px; letter-spacing: -4px; font-variant-numeric: tabular-nums; line-height: 1; }
+.center__track { width: 190px; height: 5px; background: #1e2732; margin-top: 26px; }
+.center__fill { height: 5px; background: var(--bone-dim); transition: width 120ms linear; }
 .center__fill[data-team='blue'] { background: var(--blue); }
 .center__fill[data-team='red']  { background: var(--red); }
-.center__caption { font-size: 21px; color: var(--bone-dim); margin-top: 16px; }
+.center__actor { font-size: 30px; margin-top: 34px; }
+.center__actor[data-team='blue'] { color: var(--blue); }
+.center__actor[data-team='red']  { color: var(--red); }
+.center__verb { font-size: 23px; color: var(--bone-dim); margin-top: 8px; }
+
+/* ---------- bans ---------- */
+
+.foot {
+  height: 128px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 34px; background: var(--ink-2); border-top: 2px solid var(--line);
+}
+.bans { display: flex; align-items: center; gap: 16px; }
+.bans--red { flex-direction: row-reverse; }
+.bans__label { font-size: 21px; color: var(--bone-dim); width: 62px; }
+.bans--red .bans__label { text-align: right; }
+.bans__row { display: flex; gap: 9px; }
+
+.ban { position: relative; width: 66px; height: 66px; overflow: hidden; border-radius: 2px; }
+.ban img { width: 100%; height: 100%; filter: grayscale(1) brightness(.6); }
+.ban__slash {
+  position: absolute; left: -12px; top: 32px; width: 90px; height: 2px;
+  background: var(--ink); transform: rotate(-45deg);
+}
+.ban--empty { border: 1px solid #232c36; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }

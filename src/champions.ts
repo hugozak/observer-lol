@@ -1,4 +1,5 @@
 const CDRAGON = 'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1';
+const DDRAGON = 'https://ddragon.leagueoflegends.com/cdn';
 
 export type Champion = {
   id: number;
@@ -6,6 +7,10 @@ export type Champion = {
   alias: string;
   iconUrl: string;
   splashUrl: string;
+  /** Artwork de l'ecran de chargement, cadrage portrait 308x560.
+   *  C'est le seul asset officiel deja cadre pour une colonne verticale :
+   *  un splash paysage recadre coupe la tete du champion une fois sur deux. */
+  artUrl: string;
 };
 
 type Summary = { id: number; name: string; alias: string };
@@ -30,6 +35,7 @@ export async function loadChampions(): Promise<void> {
       alias: c.alias,
       iconUrl: `${CDRAGON}/champion-icons/${c.id}.png`,
       splashUrl: `${CDRAGON}/champion-splashes/${c.id}/${c.id}000.jpg`,
+      artUrl: `${DDRAGON}/img/champion/loading/${c.alias}_0.jpg`,
     });
   }
   cache = next;

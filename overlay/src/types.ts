@@ -7,6 +7,7 @@ export type PickSlot = {
   championName: string | null;
   iconUrl: string | null;
   splashUrl: string | null;
+  artUrl: string | null;
   hovering: boolean;
   locked: boolean;
 };
