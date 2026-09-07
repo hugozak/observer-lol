@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>draft debug</title>
+<style>
+  /* Fond transparent : OBS gere l'alpha nativement. */
+  body { background: transparent; color: #fff; font: 14px/1.4 system-ui; margin: 0; padding: 16px; }
+  .teams { display: flex; gap: 32px; }
+  .slot { display: flex; align-items: center; gap: 8px; height: 44px; opacity: .35; }
+  .slot.hovering { opacity: .7; }
+  .slot.locked { opacity: 1; }
+  .slot.turn { outline: 2px solid #f0c674; outline-offset: 3px; }
+  .slot img { width: 40px; height: 40px; border-radius: 4px; background: #222; }
+  .bans { display: flex; gap: 4px; margin-top: 12px; }
+  .bans img { width: 26px; height: 26px; filter: grayscale(1); }
+  #log { margin-top: 20px; font-size: 12px; opacity: .6; }
+</style>
+
+<div id="timer"></div>
+<div class="teams">
+  <div><h3>Blue</h3><div id="blue"></div><div class="bans" id="blue-bans"></div></div>
+  <div><h3>Red</h3><div id="red"></div><div class="bans" id="red-bans"></div></div>
+</div>
+<div id="log"></div>
+
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  let deadline = 0;
+
+  function renderTeam(name, team, current) {
+    $(name).innerHTML = team.picks.map((p, i) => {
+      const turn = current && current.team === name && current.slotIndex === i && current.type === 'pick';
+      const cls = [p.locked && 'locked', p.hovering && 'hovering', turn && 'turn'].filter(Boolean).join(' ');
+      return `<div class="slot ${cls}">
+                <img src="${p.iconUrl ?? ''}" alt="">
+                <span>${p.championName ?? '—'}</span>
+                <small>${p.position}</small>
+              </div>`;
+    }).join('');
+
+    $(`${name}-bans`).innerHTML = team.bans
+      .map((b) => `<img src="${b.iconUrl ?? ''}" title="${b.championName ?? ''}">`)
+      .join('');
+  }
+
+  function render(state) {
+    if (!state.active) { $('timer').textContent = 'pas de draft en cours'; return; }
+    renderTeam('blue', state.teams.blue, state.current);
+    renderTeam('red', state.teams.red, state.current);
+    deadline = performance.now() + state.timer.msLeft;
+  }
+
+  // Decompte local, resynchronise a chaque message. Le serveur n'envoie
+  // pas un tick par seconde.
+  setInterval(() => {
+    const left = Math.max(0, deadline - performance.now());
+    if (left) $('timer').textContent = `${(left / 1000).toFixed(1)}s`;
+  }, 100);
+
+  function connect() {
+    const ws = new WebSocket(`ws://${location.host}/api`);
+    ws.onmessage = ({ data }) => {
+      const msg = JSON.parse(data);
+      if (msg.kind === 'state') render(msg.state);
+      if (msg.kind === 'events') {
+        // C'est ici que tu brancheras tes timelines GSAP.
+        $('log').textContent = msg.events.map((e) => e.type).join(' · ');
+      }
+    };
+    // La Browser Source ne se recharge pas toute seule si le collecteur
+    // redemarre : on reconnecte a la main.
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+</script>
