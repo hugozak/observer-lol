@@ -10,6 +10,12 @@
   --blue-bg: #0e1620;
   --red: #ff4d3d;
   --red-bg: #200e0c;
+
+  /* Largeur de la bande centrale et cadrage de la fenetre camera.
+     Passe --cam-aspect a 4/3 ou 1/1 si ton cadre webcam est different. */
+  --band-w: 420px;
+  --band-gutter: 24px;
+  --cam-aspect: 16 / 9;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,17 +38,16 @@ body {
 /* ---------- bandeau ---------- */
 
 .head { height: 96px; display: flex; }
-.head__team { flex: 1; display: flex; align-items: center; padding: 0 34px; position: relative; }
+.head__team { flex: 1; display: flex; align-items: center; padding: 0 34px; }
 .head__team--blue { border-top: 8px solid var(--blue); background: var(--blue-bg); }
 .head__team--red  { border-top: 8px solid var(--red);  background: var(--red-bg); justify-content: flex-end; }
-.head__name { font-size: 42px; }
+.head__name { font-size: 40px; }
 
-/* Le score est pose au centre, au-dessus de la couture des deux fonds. */
+/* Le score occupe la meme colonne que la bande centrale, sans decalage. */
 .head__score {
-  position: absolute; left: 100%; top: 0; width: 300px; height: 88px;
-  transform: translateX(-150px);
-  display: flex; align-items: center; justify-content: center; gap: 20px;
-  background: var(--ink); border-top: 8px solid var(--line); margin-top: -8px;
+  width: var(--band-w); flex: none;
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  background: #0c1117; border-top: 8px solid var(--line);
 }
 .head__pts { font-size: 44px; }
 .head__pts--blue { color: var(--blue); }
@@ -52,7 +57,9 @@ body {
 /* ---------- panneaux ---------- */
 
 .stage { flex: 1; display: flex; }
-.side { display: flex; flex: 1; }
+/* Les cotes sont a largeur fixe : la bande centrale ne bouge jamais d'un
+   pixel, meme quand un panneau s'elargit. */
+.side { display: flex; flex: none; width: calc((1920px - var(--band-w)) / 2); }
 
 .panel {
   position: relative;
@@ -95,14 +102,35 @@ body {
   font-size: 26px; color: var(--slate); white-space: nowrap;
 }
 
-/* ---------- centre ---------- */
+/* ---------- bande centrale ---------- */
 
-.center {
-  width: 300px; flex: none; background: #0c1117;
+.band { width: var(--band-w); flex: none; display: flex; flex-direction: column; }
+.band__pad { height: 44px; flex: none; background: #0c1117; }
+.band__camrow { flex: none; display: flex; }
+.band__gutter { width: var(--band-gutter); flex: none; background: #0c1117; }
+.band__info {
+  flex: 1; background: #0c1117;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.center__clock { font-size: 130px; letter-spacing: -4px; font-variant-numeric: tabular-nums; line-height: 1; }
-.center__track { width: 190px; height: 5px; background: #1e2732; margin-top: 26px; }
+
+/* Le fond est porte par les blocs voisins, jamais par le parent : c'est ce
+   qui laisse ce rectangle reellement transparent dans OBS. */
+.cam {
+  flex: 1;
+  aspect-ratio: var(--cam-aspect);
+  background: transparent;
+  border: 2px solid #232c36;
+  position: relative;
+}
+.cam__hint { display: none; }
+body[data-dev] .cam__hint {
+  display: flex; position: absolute; inset: 0;
+  align-items: center; justify-content: center;
+  font-size: 22px; color: #2b333d;
+}
+
+.center__clock { font-size: 126px; letter-spacing: -4px; font-variant-numeric: tabular-nums; line-height: 1; }
+.center__track { width: 210px; height: 5px; background: #1e2732; margin-top: 26px; }
 .center__fill { height: 5px; background: var(--bone-dim); transition: width 120ms linear; }
 .center__fill[data-team='blue'] { background: var(--blue); }
 .center__fill[data-team='red']  { background: var(--red); }

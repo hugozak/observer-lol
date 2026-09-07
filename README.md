@@ -40,3 +40,12 @@ difference, et tu developpes sans lancer de partie.
 
 La page de debug d'origine reste disponible : `PUBLIC_DIR=debug npm run dev`
 depuis la racine.
+
+### Fenetre camera
+
+La bande centrale reserve un rectangle transparent pour la webcam du
+commentateur. Dans OBS, place la source video SOUS la Browser Source et
+cale-la sur le cadre. Reglages dans `overlay/src/scene.css` :
+
+    --band-w: 420px;      largeur de la bande centrale
+    --cam-aspect: 16 / 9; cadrage de la fenetre

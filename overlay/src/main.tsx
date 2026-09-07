@@ -28,7 +28,8 @@ function App() {
   const { state, connected, setState } = useDraftState(onEvent);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--scale', String(SCALE));
+    // Le repere visuel de la fenetre camera n'apparait qu'en dev.
+    if (DEV) document.body.dataset.dev = '';
   }, []);
 
   return (

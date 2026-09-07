@@ -79,18 +79,17 @@ export function DraftScene({ state }: { state: DraftState }) {
   return (
     <div className="scene">
       <header className="head">
-        {(['blue', 'red'] as Team[]).map((side, i) => (
-          <div className={`head__team head__team--${side}`} key={side}>
-            <span className="head__name">{TEAMS[side].name}</span>
-            {i === 0 && (
-              <div className="head__score">
-                <span className="head__pts head__pts--blue">{TEAMS.blue.score}</span>
-                <span className="head__dash">—</span>
-                <span className="head__pts head__pts--red">{TEAMS.red.score}</span>
-              </div>
-            )}
-          </div>
-        ))}
+        <div className="head__team head__team--blue">
+          <span className="head__name">{TEAMS.blue.name}</span>
+        </div>
+        <div className="head__score">
+          <span className="head__pts head__pts--blue">{TEAMS.blue.score}</span>
+          <span className="head__dash">—</span>
+          <span className="head__pts head__pts--red">{TEAMS.red.score}</span>
+        </div>
+        <div className="head__team head__team--red">
+          <span className="head__name">{TEAMS.red.name}</span>
+        </div>
       </header>
 
       <div className="stage">
@@ -102,20 +101,33 @@ export function DraftScene({ state }: { state: DraftState }) {
           ))}
         </div>
 
-        <div className="center">
-          <div className="center__clock">{clock}</div>
-          <div className="center__track">
-            <div className="center__fill" data-team={actor?.team}
-              style={{ width: `${Math.min(100, (ms / 30000) * 100)}%` }} />
+        {/* Bande centrale : largeur fixe, contenu qui ne bouge jamais.
+            La fenetre camera est un trou reellement transparent, pour que
+            la source video placee dessous dans OBS apparaisse au travers. */}
+        <div className="band">
+          <div className="band__pad" />
+          <div className="band__camrow">
+            <div className="band__gutter" />
+            <div className="cam">
+              <span className="cam__hint">caméra du caster</span>
+            </div>
+            <div className="band__gutter" />
           </div>
-          {actor && (
-            <>
-              <div className="center__actor" data-team={actor.team}>
-                {playerName(actor.team, actor.slotIndex)}
-              </div>
-              <div className="center__verb">{verb}</div>
-            </>
-          )}
+          <div className="band__info">
+            <div className="center__clock">{clock}</div>
+            <div className="center__track">
+              <div className="center__fill" data-team={actor?.team}
+                style={{ width: `${Math.min(100, (ms / 30000) * 100)}%` }} />
+            </div>
+            {actor && (
+              <>
+                <div className="center__actor" data-team={actor.team}>
+                  {playerName(actor.team, actor.slotIndex)}
+                </div>
+                <div className="center__verb">{verb}</div>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="side side--red">
