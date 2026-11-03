@@ -1,8 +1,5 @@
-node_modules/
+shots/
+probes/
 recordings/
-dist/
-.env
-*.log
-public/assets/
-public/index.html
-overlay/node_modules/
+node_modules/
+public/
