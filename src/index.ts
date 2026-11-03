@@ -29,10 +29,23 @@ function apply(raw: RawSession | null) {
   }
 }
 
-async function record(raw: unknown) {
+/*
+ * Les ecritures sont serialisees via une chaine de promesses. Les
+ * messages du LCU arrivent en rafale pendant une draft, et deux
+ * appendFile concurrents peuvent entrelacer leurs octets : on se
+ * retrouve avec une ligne NDJSON coupee en deux, donc un enregistrement
+ * illisible. Un vrai enregistrement de draft coute dix joueurs a
+ * remobiliser, on ne prend pas le risque.
+ */
+let writeQueue: Promise<unknown> = Promise.resolve();
+
+function record(raw: unknown) {
   if (!RECORD) return;
-  await mkdir(join(process.cwd(), 'recordings'), { recursive: true });
-  await appendFile(RECORD_FILE, JSON.stringify({ t: Date.now(), data: raw }) + '\n');
+  const line = JSON.stringify({ t: Date.now(), data: raw }) + '\n';
+  writeQueue = writeQueue
+    .then(() => mkdir(join(process.cwd(), 'recordings'), { recursive: true }))
+    .then(() => appendFile(RECORD_FILE, line))
+    .catch((err) => console.error('  echec d ecriture :', (err as Error).message));
 }
 
 async function session(creds: Credentials) {
@@ -40,7 +53,7 @@ async function session(creds: Credentials) {
   // lancee, le WebSocket ne rejouera pas le passe. Il faut un GET.
   const initial = await lcuGet<RawSession>(creds, '/lol-champ-select/v1/session');
   apply(initial);
-  await record(initial);
+  record(initial);
 
   await new Promise<void>((resolve) => {
     const ws = connectLcuSocket(creds, {
@@ -49,7 +62,7 @@ async function session(creds: Credentials) {
         // eventType Delete = la draft se termine, data devient null.
         const raw = event.eventType === 'Delete' ? null : (event.data as RawSession);
         apply(raw);
-        void record(raw);
+        record(raw);
       },
       onClose: () => {
         console.log('  deconnecte du client');

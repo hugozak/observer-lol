@@ -19,11 +19,14 @@ type RawPlayer = {
   championPickIntent: number;
   assignedPosition: string;
   summonerId: number;
+  /** Souvent absents ou masques. On les relaie si presents, sans y compter. */
+  gameName?: string;
+  summonerName?: string;
 };
 
 export type RawSession = {
   localPlayerCellId: number;
-  timer: { phase: string; adjustedTimeLeftInPhase: number };
+  timer: { phase: string; adjustedTimeLeftInPhase: number; totalTimeInPhase?: number };
   myTeam: RawPlayer[];
   theirTeam: RawPlayer[];
   actions: RawAction[][];
@@ -37,12 +40,17 @@ export type Team = 'blue' | 'red';
 
 export type PickSlot = {
   cellId: number;
+  /** position dans l'equipe, 0 a 4. Stable, sert de cle de rendu. */
+  slotIndex: number;
   position: string;
+  /** Pseudo si le client le donne, null sinon. A completer a la main. */
+  playerName: string | null;
   championId: number;
   championName: string | null;
   iconUrl: string | null;
   splashUrl: string | null;
   artUrl: string | null;
+  artFallbackUrl: string | null;
   /** true quand le joueur survole sans avoir valide */
   hovering: boolean;
   /** true quand l'action est verrouillee */
@@ -69,7 +77,7 @@ export type CurrentAction = {
 export type DraftState = {
   active: boolean;
   phase: string;
-  timer: { msLeft: number; receivedAt: number };
+  timer: { msLeft: number; msTotal: number; receivedAt: number };
   current: CurrentAction | null;
   teams: Record<Team, { picks: PickSlot[]; bans: BanSlot[] }>;
 };
@@ -77,7 +85,7 @@ export type DraftState = {
 export const EMPTY_STATE: DraftState = {
   active: false,
   phase: 'NONE',
-  timer: { msLeft: 0, receivedAt: 0 },
+  timer: { msLeft: 0, msTotal: 0, receivedAt: 0 },
   current: null,
   teams: {
     blue: { picks: [], bans: [] },
@@ -108,6 +116,7 @@ function decorate(championId: number) {
     iconUrl: champ?.iconUrl ?? null,
     splashUrl: champ?.splashUrl ?? null,
     artUrl: champ?.artUrl ?? null,
+    artFallbackUrl: champ?.artFallbackUrl ?? null,
   };
 }
 
@@ -122,20 +131,43 @@ export function normalize(session: RawSession | null): DraftState {
     red: { picks: [], bans: [] },
   };
 
-  /* --- les picks, un slot par joueur ------------------------------ */
-  for (const player of players) {
-    const action = actions.find(
-      (a) => a.type === 'pick' && a.actorCellId === player.cellId,
-    );
+  /* --- les picks --------------------------------------------------- */
+  /*
+   * On ne construit PAS les slots depuis myTeam/theirTeam. En spectate
+   * le client n'appartient a aucune equipe, et rien ne garantit que ces
+   * tableaux soient remplis : s'ils sont vides, une boucle sur eux ne
+   * produit aucun slot et l'overlay reste noir toute la draft.
+   *
+   * La structure fiable est `actions`. Le client y declare les dix
+   * actions de pick des l'ouverture de la draft, completees ou non,
+   * chacune avec son actorCellId. C'est donc elle qui definit quels
+   * slots existent ; myTeam/theirTeam ne sert plus qu'a enrichir
+   * (position assignee, pseudo) quand l'information est la.
+   */
+  const byCell = new Map<number, RawPlayer>();
+  for (const p of players) if (p.cellId >= 0) byCell.set(p.cellId, p);
+
+  const pickActions = actions.filter((a) => a.type === 'pick');
+
+  const cellIds = new Set<number>();
+  for (const a of pickActions) if (a.actorCellId >= 0) cellIds.add(a.actorCellId);
+  for (const cell of byCell.keys()) cellIds.add(cell);
+
+  for (const cellId of [...cellIds].sort((a, b) => a - b)) {
+    const player = byCell.get(cellId);
+    const action = pickActions.find((a) => a.actorCellId === cellId);
 
     // championId non nul + completed false = le joueur survole un champion.
     // C'est ce qui permet d'afficher le hover en direct.
-    const championId = action?.championId || player.championId || player.championPickIntent || 0;
+    const championId =
+      action?.championId || player?.championId || player?.championPickIntent || 0;
     const locked = action?.completed ?? false;
 
-    teams[teamOf(player.cellId)].picks.push({
-      cellId: player.cellId,
-      position: player.assignedPosition ?? '',
+    teams[teamOf(cellId)].picks.push({
+      cellId,
+      slotIndex: slotIndexOf(cellId),
+      position: player?.assignedPosition ?? '',
+      playerName: player?.gameName || player?.summonerName || null,
       championId,
       hovering: championId > 0 && !locked,
       locked,
@@ -148,8 +180,15 @@ export function normalize(session: RawSession | null): DraftState {
   }
 
   /* --- les bans, dans l'ordre chronologique ----------------------- */
+  /*
+   * On ne garde que les bans verrouilles. Les dix actions de ban
+   * existent des l'ouverture de la draft, et une action en cours porte
+   * deja le championId survole : les relayer telles quelles afficherait
+   * a l'antenne un ban avant qu'il soit valide. A l'ecran, un ban
+   * n'existe qu'une fois completed.
+   */
   const banActions = actions
-    .filter((a) => a.type === 'ban')
+    .filter((a) => a.type === 'ban' && a.completed && a.championId > 0)
     .sort((a, b) => a.id - b.id);
 
   for (const action of banActions) {
@@ -160,7 +199,7 @@ export function normalize(session: RawSession | null): DraftState {
       championId: action.championId,
       championName,
       iconUrl,
-      locked: action.completed,
+      locked: true,
     });
   }
 
@@ -185,6 +224,10 @@ export function normalize(session: RawSession | null): DraftState {
     // resynchroniser a chaque message plutot que d'attendre un tick.
     timer: {
       msLeft: session.timer?.adjustedTimeLeftInPhase ?? 0,
+      // La duree de la phase varie : ~27s pour un ban, 30s pour un pick,
+      // et une custom peut etre configuree autrement. Une barre de
+      // progression codee sur 30s en dur serait fausse la moitie du temps.
+      msTotal: session.timer?.totalTimeInPhase ?? 0,
       receivedAt: Date.now(),
     },
     current,

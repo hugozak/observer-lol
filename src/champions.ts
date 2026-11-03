@@ -7,6 +7,8 @@ export type Champion = {
   alias: string;
   iconUrl: string;
   splashUrl: string;
+  /** Repli quand artUrl ne charge pas : voir le commentaire plus bas. */
+  artFallbackUrl: string;
   /** Artwork de l'ecran de chargement, cadrage portrait 308x560.
    *  C'est le seul asset officiel deja cadre pour une colonne verticale :
    *  un splash paysage recadre coupe la tete du champion une fois sur deux. */
@@ -36,6 +38,14 @@ export async function loadChampions(): Promise<void> {
       iconUrl: `${CDRAGON}/champion-icons/${c.id}.png`,
       splashUrl: `${CDRAGON}/champion-splashes/${c.id}/${c.id}000.jpg`,
       artUrl: `${DDRAGON}/img/champion/loading/${c.alias}_0.jpg`,
+      // artUrl est construit depuis l'alias CommunityDragon, mais Data
+      // Dragon utilise ses propres cles et les deux referentiels
+      // divergent sur quelques champions (le cas classique : CDragon
+      // "FiddleSticks" contre DDragon "Fiddlesticks"). Un 404 = un
+      // panneau sans artwork en plein cast. CDragon indexe par id
+      // numerique, donc ce repli ne peut pas se tromper de cle ;
+      // c'est un cadrage paysage, a recadrer en CSS.
+      artFallbackUrl: `${CDRAGON}/champion-splashes/${c.id}/${c.id}000.jpg`,
     });
   }
   cache = next;

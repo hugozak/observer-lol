@@ -17,11 +17,19 @@ export type DraftEvent =
 export function diff(prev: DraftState, next: DraftState): DraftEvent[] {
   const events: DraftEvent[] = [];
 
-  if (!prev.active && next.active) events.push({ type: 'draft.started' });
-  if (prev.active && !next.active) {
-    return [{ type: 'draft.ended' }];
-  }
-  if (!next.active) return events;
+  if (prev.active && !next.active) return [{ type: 'draft.ended' }];
+  if (!next.active) return [];
+
+  /*
+   * Transition vide -> active : on annonce le demarrage et RIEN d'autre.
+   * Ce cas n'est pas seulement le debut d'une draft, c'est aussi le
+   * collecteur qui redemarre en pleine draft (ou qui se reconnecte au
+   * client). L'etat de depart est alors deja peuple, et diffuser les
+   * verrous deja acquis declencherait dix animations simultanees a
+   * l'antenne. L'etat complet suffit a peindre l'ecran ; les
+   * evenements ne servent qu'aux transitions reellement vues.
+   */
+  if (!prev.active) return [{ type: 'draft.started' }];
 
   /* --- changement de tour ----------------------------------------- */
   if (next.current && next.current.actionId !== prev.current?.actionId) {
@@ -34,8 +42,15 @@ export function diff(prev: DraftState, next: DraftState): DraftEvent[] {
 
   /* --- picks ------------------------------------------------------- */
   for (const team of ['blue', 'red'] as Team[]) {
-    next.teams[team].picks.forEach((slot, i) => {
-      const before = prev.teams[team].picks[i];
+    // Index par cellId : le nombre de slots peut varier d'un message a
+    // l'autre (un joueur qui rejoint, myTeam qui se remplit en cours de
+    // route cote spectateur). Comparer position par position dans le
+    // tableau ferait glisser les paires et produirait de faux verrous.
+    const prevByCell = new Map(prev.teams[team].picks.map((p) => [p.cellId, p]));
+
+    next.teams[team].picks.forEach((slot) => {
+      const before = prevByCell.get(slot.cellId);
+      const i = slot.slotIndex;
 
       if (!before?.locked && slot.locked) {
         events.push({
